@@ -109,9 +109,9 @@ def train_epoch(epoch, wandb):
 
 
 def init_model(lm_config):
-    tokenizer = AutoTokenizer.from_pretrained('./model/minimind_tokenizer')
+    tokenizer = AutoTokenizer.from_pretrained(args.tokenizer_path)
     moe_path = '_moe' if lm_config.use_moe else ''
-    ckp = f'./out/{lm_config.dim}{moe_path}_llm.pth'
+    ckp = f'{args.llm_pretrain_dir}/pretrain_{lm_config.dim}{moe_path}.pth'
 
     model = Transformer(lm_config)
     state_dict = torch.load(ckp, map_location=args.device)
@@ -148,6 +148,8 @@ def init_distributed_mode():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="MiniMind-V Pretrain")
     parser.add_argument("--out_dir", type=str, default="out", help="Output directory")
+    parser.add_argument("--llm_pretrain_dir", type=str, default="out", help="Directory to load text-only llm pretrained model")
+    parser.add_argument("--tokenizer_path", type=str, default="./model/minimind_tokenizer", help="Path to the tokenizer")
     parser.add_argument("--epochs", type=int, default=19, help="Number of epochs")
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size")
     parser.add_argument("--learning_rate", type=float, default=4e-4, help="Learning rate")
