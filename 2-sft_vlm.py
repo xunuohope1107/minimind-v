@@ -124,14 +124,14 @@ def train_epoch(epoch, wandb):
 
 
 def init_model(lm_config):
-    tokenizer = AutoTokenizer.from_pretrained('./model/minimind_tokenizer')
+    tokenizer = AutoTokenizer.from_pretrained(args.tokenizer_path)
     moe_path = '_moe' if lm_config.use_moe else ''
 
     # 多图推理建议在单图推理之后
     if args.multi:
-        ckp = f'./out/{lm_config.dim}{moe_path}_vlm_sft.pth'
+        ckp = f'{args.ckp_dir}/{lm_config.dim}{moe_path}_vlm_sft.pth'
     else:
-        ckp = f'./out/{lm_config.dim}{moe_path}_vlm_pretrain.pth'
+        ckp = f'{args.ckp_dir}/{lm_config.dim}{moe_path}_vlm_pretrain.pth'
 
     model = Transformer(lm_config)
     state_dict = torch.load(ckp, map_location=args.device)
@@ -168,7 +168,9 @@ def init_distributed_mode():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="MiniMind-V-SFT")
     parser.add_argument("--out_dir", type=str, default="out", help="Output directory")
-    parser.add_argument("--epochs", type=int, default=19, help="Number of epochs")
+    parser.add_argument("--ckp_dir", type=str, default="out", help="Directory to save/load checkpoints")
+    parser.add_argument("--tokenizer_path", type=str, default="./model/minimind_tokenizer", help="Path to the tokenizer")
+    parser.add_argument("--epochs", type=int, default=1, help="Number of epochs")
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size")
     parser.add_argument("--learning_rate", type=float, default=1e-6, help="Learning rate")
     parser.add_argument("--device", type=str, default="cuda:0" if torch.cuda.is_available() else "cpu",
@@ -190,14 +192,18 @@ if __name__ == "__main__":
     parser.add_argument('--local_rank', type=int, default=-1, help='local rank for distributed training')
     parser.add_argument('--multi', type=bool, default=False, help='multi-images training')
     parser.add_argument('--save_last', type=bool, default=True, help='save last step model')
+    parser.add_argument('--dim', default=512, type=int)
+    parser.add_argument('--n_layers', default=8, type=int)
+    parser.add_argument('--max_seq_len', default=512, type=int)
+    parser.add_argument('--use_moe', default=False, type=bool)
     parser.add_argument('--visual_encoder', type=str, default="clip", help='type of visual endcoder')
 
     args = parser.parse_args()
 
     if args.visual_encoder == "clip":
-        lm_config = LMConfig()
+        lm_config = LMConfig(dim=args.dim, n_layers=args.n_layers, max_seq_len=args.max_seq_len, use_moe=args.use_moe)
     else:
-        lm_config = LMConfig(image_special_token='<' * 98 + '>' * 98, image_ids=[30] * 98 + [32] * 98)
+        lm_config = LMConfig(dim=args.dim, n_layers=args.n_layers, max_seq_len=args.max_seq_len, use_moe=args.use_moe, image_special_token='<' * 98 + '>' * 98, image_ids=[30] * 98 + [32] * 98)
 
     max_seq_len = lm_config.max_seq_len
     args.save_dir = os.path.join(args.out_dir)
