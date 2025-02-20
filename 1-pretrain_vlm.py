@@ -168,14 +168,18 @@ if __name__ == "__main__":
     parser.add_argument("--log_interval", type=int, default=10, help="Logging interval")
     parser.add_argument("--save_interval", type=int, default=100, help="Model saving interval")
     parser.add_argument('--local_rank', type=int, default=-1, help='local rank for distributed training')
+    parser.add_argument('--dim', default=512, type=int)
+    parser.add_argument('--n_layers', default=8, type=int)
+    parser.add_argument('--max_seq_len', default=512, type=int)
+    parser.add_argument('--use_moe', default=False, type=bool)
     parser.add_argument('--visual_encoder', type=str, default="clip", help='type of visual endcoder')
 
     args = parser.parse_args()
 
     if args.visual_encoder == "clip":
-        lm_config = LMConfig()
+        lm_config = LMConfig(dim=args.dim, n_layers=args.n_layers, max_seq_len=args.max_seq_len, use_moe=args.use_moe)
     else:
-        lm_config = LMConfig(image_special_token='<' * 98 + '>' * 98, image_ids=[30] * 98 + [32] * 98)
+        lm_config = LMConfig(dim=args.dim, n_layers=args.n_layers, max_seq_len=args.max_seq_len, use_moe=args.use_moe, image_special_token='<' * 98 + '>' * 98, image_ids=[30] * 98 + [32] * 98)
 
     max_seq_len = lm_config.max_seq_len
     args.save_dir = os.path.join(args.out_dir)
